@@ -18,6 +18,12 @@ const audioPlay = new Audio('/sons/play.wav');
 const audioPause = new Audio('/sons/pause.mp3');
 const audioTempoFinalizado = new Audio('./sons/beep.mp3');
 
+const temposIniciais = {
+    foco: 1500,//sem aspas pq nao tem carac especiais
+    'descanso-curto': 300,
+    'descanso-longo': 900
+};
+
 
 musicaFocoInput.addEventListener('change', () => {// change serve para input checkbox
     if(musica.paused){
@@ -30,7 +36,7 @@ musicaFocoInput.addEventListener('change', () => {// change serve para input che
 
 
 focoBt.addEventListener('click', () => {
-     tempoDecorridoEmSegundos = 1500;
+    definirTempoInicial('foco');
     alterarContexto('foco');
     focoBt.classList.add('active');
     
@@ -38,17 +44,22 @@ focoBt.addEventListener('click', () => {
 })
 
 curtoBt.addEventListener('click', () =>{
-    tempoDecorridoEmSegundos = 300;
+    definirTempoInicial('descanso-curto');
     alterarContexto('descanso-curto');
     curtoBt.classList.add('active');
 })
 
 longoBt.addEventListener('click',() =>{
-     tempoDecorridoEmSegundos = 900;
+    definirTempoInicial('descanso-longo');
     alterarContexto('descanso-longo');
     longoBt.classList.add('active');
     
 })
+
+function definirTempoInicial(contexto) {
+    tempoDecorridoEmSegundos = temposIniciais[contexto];//quando o objeto é dinamico usamos []
+    mostrarTempo();
+}
 
 function alterarContexto(contexto){
     mostrarTempo();
@@ -82,6 +93,11 @@ const contagemRegressiva = () =>{ // colocou em constante para jogar direto no e
     if (tempoDecorridoEmSegundos <= 0){
         audioTempoFinalizado.play();
         alert('Tempo finalizado !');
+        const focoAtivo = html.getAttribute('data-contexto') == 'foco';//verificando se foco esta ativo
+        if (focoAtivo){
+            const evento = new CustomEvent('focoFinalizado');
+            document.dispatchEvent(evento);//se o tempo acabar e estiver selecionado o foco, um evento personalziado chamado focoFinalizado será disparado
+        }
         zerar();
         return;
     }
@@ -104,12 +120,20 @@ function iniciarOuPausar (){
     imagemBt.setAttribute('src',`/imagens/pause.png`);
 }
 
-function zerar(){ // zerando o valor quando chega em 0 para não ficar preso em looping no alert
+function zerar() {
     clearInterval(intervaloID);
     iniciarOuPausarBt.textContent = 'Começar';
-    imagemBt.setAttribute('src',`/imagens/play_arrow.png`);
+    imagemBt.setAttribute('src', `/imagens/play_arrow.png`);
     intervaloID = null;
+    
+    if (tempoDecorridoEmSegundos <= 0){
+        const contexto = html.getAttribute('data-contexto');
+    tempoDecorridoEmSegundos = temposIniciais[contexto] || 10; // Se o contexto não for encontrado em temposIniciais, define como 10 segundos
 
+    mostrarTempo();
+
+    }   
+   
 }
 
 function mostrarTempo(){

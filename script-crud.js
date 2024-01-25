@@ -1,12 +1,18 @@
 const btnAdicionarTarefa = document.querySelector('.app__button--add-task');
 const btnCancelarTarefa = document.querySelector('.app__form-footer__button--cancel');
+const btnExcluirTarefa = document.querySelector('.app__form-footer__button--delete');
 const formAdicionarTarefa = document.querySelector('.app__form-add-task');
 const textarea = document.querySelector('.app__form-textarea');
 const ulTarefas = document.querySelector('.app__section-task-list');
+const paragrafoDescricaoTarefa = document.querySelector('.app__section-active-task-description');
+const btnRemoverConcluidas = document.querySelector('#btn-remover-concluidas');
+const btnRemoverTodas = document.querySelector('#btn-remover-todas');
+let tarefaSelecionada = null;
+let liTarefaSelecionada = null;
 
 
 
-const tarefas = JSON.parse(localStorage.getItem('tarefas')) || [];//ao invés de iniciar com um array vazio ele já verifica no inicio se tem algo guardado na localstorage caso não tenha, vai pro array vazio. É preciso converter a string de volta em um array.
+let tarefas = JSON.parse(localStorage.getItem('tarefas')) || [];//ao invés de iniciar com um array vazio ele já verifica no inicio se tem algo guardado na localstorage caso não tenha, vai pro array vazio. É preciso converter a string de volta em um array.
 
 function atualizarTarefas (){
     localStorage.setItem('tarefas',JSON.stringify(tarefas));//guardar as informações para não sumirem com o refresh do navegador
@@ -37,20 +43,21 @@ function criarElementoTarefa(tarefa) {
     botao.classList.add('app_button-edit');
   
     function salvarOuEditar() {
-      if (paragrafo.contentEditable === 'false') {
+      if (paragrafo.contentEditable === 'false') {// Permite editar o parágrafo
         paragrafo.contentEditable = true;
         paragrafo.focus();
-      } else {
+      } else {//Fecha a edição de parágrafo e vai salvar as novas informações
         paragrafo.contentEditable = false;
         const novaDescricao = paragrafo.textContent.trim();
   
-        if (novaDescricao === '') {
+        if (novaDescricao === '') {// Se estiver vazio volta para edição
           paragrafo.contentEditable = true;
+          alert('Digite algo');
           paragrafo.focus();
           return;
         }
   
-        paragrafo.textContent = novaDescricao;
+        paragrafo.textContent = novaDescricao;//Atualizando o parágrafo e o objeto
         tarefa.descricao = novaDescricao;
         atualizarTarefas();
       }
@@ -66,8 +73,11 @@ function criarElementoTarefa(tarefa) {
       }
     });
   
-    paragrafo.addEventListener('blur', () => {
-      salvarOuEditar();
+    paragrafo.addEventListener('blur', (event) => {//Impede que saia do parágrafo sem salvar 
+      if (paragrafo.contentEditable === 'true'){
+        paragrafo.focus();
+        event.preventDefault();
+      }
     });
   
     const imagemBotao = document.createElement('img');
@@ -78,7 +88,36 @@ function criarElementoTarefa(tarefa) {
     li.append(svg);
     li.append(paragrafo);
     li.append(botao);
+
+    if (tarefa.completa){
+      li.classList.add('app__section-task-list-item-complete');
+    botao.setAttribute('disabled','true');
+
+    }else{
+      li.onclick = () =>{
+
+        document.querySelectorAll('.app__section-task-list-item-active')
+          .forEach(elemento => {
+            elemento.classList.remove('app__section-task-list-item-active')
+          });//Seleciona todos com essa classe e remove de cada um
   
+          if (tarefaSelecionada == tarefa){ //Caso clicar novamente na tarefa vai sair da seleção e limpar do campo em andamento
+            paragrafoDescricaoTarefa.textContent = '';
+            tarefaSelecionada = null;
+            liTarefaSelecionada = null;
+            return;
+          }
+  
+        tarefaSelecionada = tarefa;
+        liTarefaSelecionada = li;
+        paragrafoDescricaoTarefa.textContent = tarefa.descricao;
+        
+        li.classList.add('app__section-task-list-item-active');
+      }
+    
+    }
+
+    
     return li;
   }
 
@@ -107,8 +146,42 @@ btnCancelarTarefa.addEventListener('click', () =>{
 
 })
 
-tarefas.forEach(tarefa => {
+btnExcluirTarefa.addEventListener('click', () =>{
+  textarea.value = '';
+  formAdicionarTarefa.classList.add('hidden');
+})
+
+tarefas.forEach(tarefa => {//Ao iniciar a navegação, vai pegar cada elemento armazenado no array tarefas e cria os elementos quando a página for carregada
     const elementoTarefa = criarElementoTarefa(tarefa);
     ulTarefas.append(elementoTarefa);
     
 });
+
+document.addEventListener('focoFinalizado', () => {//utilizando o evento que foi criado no script.js ou seja quando o timer do foco chega ao fim
+  if(tarefaSelecionada && liTarefaSelecionada){
+    liTarefaSelecionada.classList.remove('app__section-task-list-item-active');
+    liTarefaSelecionada.classList.add('app__section-task-list-item-complete');
+    liTarefaSelecionada.querySelector('button').setAttribute('disabled','true');
+    tarefaSelecionada.completa = true; //como tarefaSelecionada é = tarefa, é o mesmo que dizer que tarefa.completa = true
+    atualizarTarefas();//guardando essa nova propriedade completa no array tarefas
+  }
+})
+
+
+
+
+function removerTarefas(somenteCompletas){//ao invés de function poderia ser uma const
+  let seletor =  ".app__section-task-list-item";
+  if (somenteCompletas) {
+      seletor = ".app__section-task-list-item-complete";
+  }
+  document.querySelectorAll(seletor).forEach(elemento => {
+      elemento.remove();
+  });
+  tarefas = somenteCompletas ? tarefas.filter(tarefa => !tarefa.completa) : [];
+  atualizarTarefas();
+}
+
+
+btnRemoverConcluidas.onclick = () => removerTarefas(true);
+btnRemoverTodas.onclick = () => removerTarefas(false);
