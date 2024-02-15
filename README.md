@@ -3,7 +3,7 @@
 <h2>🔖 Sobre</h2>
 <p>Projeto desenvolvido durante o curso de Javascript da alura. Essa aplicação permite adicionar uma lista de tarefas que devem ser realizadas e através do cronômetro controlar a realização dessas atividades e o intervalo de decanso entre elas. As informações serão armazenadas no localStorage</p>
 
-[Acessar a página](https://brunomartins.github.io/fokus-javascript-dom/)
+[Acessar a página](https://fokus-javascript-dom.vercel.app/)
 
 ## 🚀 Tecnologias
 <div>
